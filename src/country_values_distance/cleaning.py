@@ -156,7 +156,7 @@ def prepare_companies(
     input_path: Path = RAW_COMPANY_PATH,
     output_path: Path = OUTPUT_CLEANED_TARGET_COUNTRIES_PATH,
     chunksize: int = DEFAULT_CHUNKSIZE,
-) -> None:
+) -> dict[str, int]:
     if chunksize <= 0:
         raise ValueError("chunksize must be a positive integer")
 
@@ -167,6 +167,12 @@ def prepare_companies(
         raise FileNotFoundError(f"Input path does not exist: {input_path}")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    summary = {
+        "input_rows": 0,
+        "written_rows": 0,
+        "unmapped_industry_rows": 0,
+    }
 
     with NamedTemporaryFile(
         mode="w",
@@ -181,10 +187,16 @@ def prepare_companies(
         wrote_header = False
 
         for chunk in pd.read_csv(input_path, chunksize=chunksize):
+            summary["input_rows"] += len(chunk)
             cleaned_chunks = cleaned_chunk(chunk)
 
             if cleaned_chunks.empty:
                 continue
+
+            summary["written_rows"] += len(cleaned_chunks)
+            summary["unmapped_industry_rows"] += int(
+                cleaned_chunks["High_Level_Sector"].eq("Other").sum()
+            )
 
             cleaned_chunks.to_csv(
                 temporary_path,
@@ -201,6 +213,7 @@ def prepare_companies(
             )
 
         temporary_path.replace(output_path)
+        return summary
 
     finally:
         if temporary_path.exists():

@@ -47,10 +47,13 @@ OUTPUT_HOMEPAGE_FETCH_PATH = (
     PROCESSED_DATA_DIR / "company_homepage_fetch.csv"
 )
 OUTPUT_INTERNAL_LINKS_PATH = (
-    PROCESSED_DATA_DIR / "internal_links.csv"
+    PROCESSED_DATA_DIR / "company_internal_links.csv"
 )
 OUTPUT_INTERNAL_LINK_GROUPS_PATH = (
-    PROCESSED_DATA_DIR / "internal_link_groups.csv"
+    PROCESSED_DATA_DIR / "company_internal_link_groups.csv"
+)
+OUTPUT_RUN_MANIFEST_PATH = (
+    PROCESSED_DATA_DIR / "company_run_manifest.json"
 )
 
 HOMEPAGE_HTML_CACHE_DIR = PROCESSED_DATA_DIR / "homepage_html"

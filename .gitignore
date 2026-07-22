@@ -1,0 +1,17 @@
+data/raw/dataset_country_test.csv
+data/processed/company_scrape_ready.csv
+data/processed/company_seed_sample.csv
+data/processed/government_ratio_summary.csv
+data/processed/company_unreachable_websites_reserve.csv
+data/processed/company_reachable_websites.csv
+data/processed/company_duplicate_domain_review.csv
+data/processed/company_domain_checked.csv
+data/processed/company_cleaned_target_countries.csv
+01_data_cleaning _balanced.ipynb
+data/processed/homepage_fetch.csv
+
+data/processed/internal_links.csv
+.venv
+src/country_values_distance.egg-info
+data/processed/robot_check.csv
+data

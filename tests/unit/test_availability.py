@@ -60,3 +60,31 @@ def test_run_availability_checks_uses_bounded_workers(tmp_path: Path, monkeypatc
 
     assert len(result) == 3
     assert max_seen <= 2
+
+
+def test_run_availability_checks_returns_completed_checkpoint_on_resume(
+    tmp_path: Path,
+) -> None:
+    frame = pd.DataFrame(
+        {
+            "company_id": [1, 2],
+            "domain": ["example.com", "example.org"],
+            "website_url": ["https://example.com", "https://example.org"],
+        }
+    )
+    checkpoint_path = tmp_path / "availability-checkpoint.csv"
+
+    frame = frame.copy()
+    frame["availability_key"] = frame["website_url"].apply(build_url_variants)
+    frame.to_csv(checkpoint_path, index=False)
+
+    result = asyncio.run(
+        run_availability_checks(
+            dataframe=frame.drop(columns=["availability_key"]),
+            checkpoint_path=checkpoint_path,
+            max_workers=2,
+        )
+    )
+
+    assert len(result) == 2
+    assert {"company_id", "domain", "website_url"}.issubset(result.columns)

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from country_values_distance.pipeline import qualify_and_sample_companies
+from country_values_distance.pipeline import check_availability, qualify_and_sample_companies
 
 
 def test_qualify_and_sample_companies_writes_deterministic_outputs(tmp_path: Path) -> None:
@@ -52,3 +52,39 @@ def test_qualify_and_sample_companies_writes_deterministic_outputs(tmp_path: Pat
     assert domain_output_path.exists()
     assert review_output_path.exists()
     assert sample_output_path.exists()
+
+    sampled = pd.read_csv(sample_output_path)
+    assert "company_id" in sampled.columns
+
+
+def test_check_availability_persists_checkpoint_from_async_stage(tmp_path: Path, monkeypatch) -> None:
+    sample = pd.DataFrame(
+        [
+            {
+                "company_id": 1,
+                "domain": "example.com",
+                "website_url": "https://example.com",
+            }
+        ]
+    )
+    sample_input = tmp_path / "sample.csv"
+    sample.to_csv(sample_input, index=False)
+
+    checkpoint_path = tmp_path / "availability-checkpoint.csv"
+
+    async def fake_run_availability_checks(dataframe, checkpoint_path, max_workers, client=None):
+        return dataframe.copy()
+
+    monkeypatch.setattr(
+        "country_values_distance.pipeline.run_availability_checks",
+        fake_run_availability_checks,
+    )
+
+    summary = check_availability(
+        input_path=sample_input,
+        output_path=checkpoint_path,
+        workers=2,
+    )
+
+    assert summary["output_rows"] == 1
+    assert checkpoint_path.exists()

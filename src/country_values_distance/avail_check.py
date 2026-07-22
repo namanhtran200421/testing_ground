@@ -225,5 +225,9 @@ async def run_availability_checks(
     if checkpoint_records:
         result_frame = pd.DataFrame(checkpoint_records)
         save_checkpoint(checkpoint_path, result_frame)
+        return result_frame
 
-    return pd.DataFrame(checkpoint_records)
+    if completed:
+        return pd.DataFrame.from_records(list(completed.values()))
+
+    return pd.DataFrame(columns=source.columns)
