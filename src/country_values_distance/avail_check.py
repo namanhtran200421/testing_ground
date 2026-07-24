@@ -9,6 +9,7 @@ import pandas as pd
 
 from country_values_distance.cleaning import normalise_website_url
 from country_values_distance.config import (
+    HTTP_HEADERS,
     HTTP_MAX_RETRIES,
     HTTP_RETRY_BACKOFF_SECONDS,
     RETRYABLE_FAILURE_REASONS,
@@ -204,11 +205,16 @@ async def run_availability_checks(
     ].copy()
 
     semaphore = asyncio.Semaphore(max_workers)
+    owns_client = client is None
+    active_client = client or httpx.AsyncClient(
+        headers=HTTP_HEADERS,
+        follow_redirects=True,
+    )
 
     async def bounded_probe(row: pd.Series) -> pd.Series:
         async with semaphore:
             result = await check_website(
-                client=client or httpx.AsyncClient(),
+                client=active_client,
                 website_url=row["website_url"],
             )
 
@@ -219,8 +225,12 @@ async def run_availability_checks(
     checkpoint_records: list[pd.Series] = []
     tasks = [bounded_probe(row) for _, row in pending.iterrows()]
 
-    for task in asyncio.as_completed(tasks):
-        checkpoint_records.append(await task)
+    try:
+        for task in asyncio.as_completed(tasks):
+            checkpoint_records.append(await task)
+    finally:
+        if owns_client:
+            await active_client.aclose()
 
     if checkpoint_records:
         result_frame = pd.DataFrame(checkpoint_records)

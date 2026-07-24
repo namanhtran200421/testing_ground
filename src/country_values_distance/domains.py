@@ -12,7 +12,7 @@ from country_values_distance.config import (
     LEGAL_COMPANY_WORDS,
 )
 
-_TLD_EXTRACT = tldextract.TLDExtract(suffix_list_urls=())
+_TLD_EXTRACT = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
 
 
 @dataclass

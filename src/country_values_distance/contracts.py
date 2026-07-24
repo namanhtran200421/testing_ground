@@ -83,5 +83,47 @@ INTERNAL_LINK_COLUMNS = [
     "anchor_text",
 ]
 
+CRAWLED_PAGE_COLUMNS = [
+    "company_id",
+    "name",
+    "country",
+    "domain",
+    "size_bucket",
+    "url",
+    "fetch_url",
+    "parent_url",
+    "depth",
+    "anchor_text",
+    "feature_text",
+    "discovery_score",
+    "matched_theme",
+    "status_code",
+    "content_type",
+    "page_text",
+    "content_positive_score",
+    "content_negative_score",
+    "semantic_margin",
+    "links_discovered",
+    "links_queued",
+    "crawl_error",
+    "candidate_section_heading",
+    "candidate_section_text",
+    "section_positive_score",
+    "section_negative_score",
+    "section_semantic_margin",
+    "candidate_section_count",
+    "heading_similarity_score",
+    "heading_matched_theme",
+    "contains_primary_value_section",
+]
 
+TRANSLATION_RESULT_COLUMNS = [
+    "source_text",
+    "detected_language",
+    "translation_needed",
+    "translated_value_text",
+    "translation_method",
+    "translation_status",
+    "translation_error",
+]
 

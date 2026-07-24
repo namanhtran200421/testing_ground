@@ -1,6 +1,8 @@
+from tempfile import NamedTemporaryFile
+from typing import Any
+
 from pathlib import Path
 import pandas as pd
-from tempfile import NamedTemporaryFile
 
 
 def validate_file_exist(path:Path, label:str = "File"):
@@ -11,26 +13,33 @@ def validate_file_exist(path:Path, label:str = "File"):
         raise ValueError(f"{label} is not a file: {path}")
 
 
-def write_csv_atomic(dataframe: pd.DataFrame, output_path: Path):
+def write_csv_atomic(
+    dataframe: pd.DataFrame,
+    output_path: Path,
+    **to_csv_kwargs: Any,
+) -> None:
     output_path.parent.mkdir(parents=True, exist_ok = True)
+    encoding = str(to_csv_kwargs.pop("encoding", "utf-8"))
     with NamedTemporaryFile(
         mode = "w",
         suffix = ".csv",
         dir= output_path.parent,
         delete= False,
         newline = '',
-        encoding='utf-8',
+        encoding=encoding,
     ) as temporary_file:
         temporary_path = Path(temporary_file.name)
 
     try:
-        dataframe.to_csv(temporary_path, index=False)
+        dataframe.to_csv(
+            temporary_path,
+            index=False,
+            encoding=encoding,
+            **to_csv_kwargs,
+        )
         temporary_path.replace(output_path)
-    except Exception as error:
-        print(error)
     finally:
         if temporary_path.exists():
             temporary_path.unlink()
     
-
 

@@ -8,19 +8,28 @@ from pathlib import Path
 from country_values_distance.cleaning import prepare_companies
 from country_values_distance.config import (
     OUTPUT_AVAILABILITY_CHECK,
+    OUTPUT_CRAWL_AUDIT_PATH,
     OUTPUT_HOMEPAGE_FETCH_PATH,
     OUTPUT_INTERNAL_LINKS_PATH,
+    OUTPUT_PRODUCTION_FINAL_PATH,
     OUTPUT_ROBOTS_VALIDATED_PATH,
+    OUTPUT_SCRAPE_READY_PATH,
     OUTPUT_SEED_SAMPLE_PATH,
+    OUTPUT_TRANSLATION_CACHE_PATH,
+    OUTPUT_TRANSLATION_PATH,
     RAW_COMPANY_PATH,
 )
 from country_values_distance.pipeline import (
+    build_scrape_ready_stage,
     check_availability,
     check_robots_stage,
+    crawl_websites_stage,
     extract_links_stage,
     fetch_homepages_stage,
     qualify_and_sample_companies,
     run_all,
+    select_values_stage,
+    translate_values_stage,
 )
 
 
@@ -70,6 +79,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=42,
         help="Deterministic seed used by sampling and downstream selection stages.",
     )
+    parser.add_argument(
+        "--translate",
+        action="store_true",
+        help="Run the Ollama translation stage after selection when using run-all.",
+    )
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -90,12 +104,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate robots.txt permissions for scrape-ready companies.",
     )
     subparsers.add_parser(
+        "build-scrape-ready",
+        help="Filter website checks into notebook 02's scrape-ready input.",
+    )
+    subparsers.add_parser(
         "fetch-homepages",
         help="Fetch cached homepage HTML and persist metadata for parsing stages.",
     )
     subparsers.add_parser(
         "extract-links",
         help="Extract canonical internal links from cached homepage HTML.",
+    )
+    subparsers.add_parser(
+        "crawl-websites",
+        help="Run the bounded relevance-guided BFS crawler.",
+    )
+    subparsers.add_parser(
+        "select-values",
+        help="Score crawled sections and select one values page per company.",
+    )
+    subparsers.add_parser(
+        "translate-values",
+        help="Detect language and translate selected values with local Ollama.",
     )
     subparsers.add_parser(
         "run-all",
@@ -135,11 +165,24 @@ def main() -> None:
 
     if args.command == "check-robots":
         check_robots_stage(
-            input_path=args.input or OUTPUT_AVAILABILITY_CHECK,
+            input_path=args.input or OUTPUT_SCRAPE_READY_PATH,
             output_path=(
                 args.output_dir / "company_robots_validated.csv"
                 if args.output_dir is not None
                 else OUTPUT_ROBOTS_VALIDATED_PATH
+            ),
+            resume=args.resume,
+            force=args.force,
+        )
+        return
+
+    if args.command == "build-scrape-ready":
+        build_scrape_ready_stage(
+            input_path=args.input or OUTPUT_AVAILABILITY_CHECK,
+            output_path=(
+                args.output_dir / OUTPUT_SCRAPE_READY_PATH.name
+                if args.output_dir is not None
+                else OUTPUT_SCRAPE_READY_PATH
             ),
         )
         return
@@ -157,6 +200,8 @@ def main() -> None:
                 if args.output_dir is not None
                 else None
             ),
+            resume=args.resume,
+            force=args.force,
         )
         return
 
@@ -171,6 +216,47 @@ def main() -> None:
         )
         return
 
+    if args.command == "crawl-websites":
+        crawl_websites_stage(
+            input_path=args.input or OUTPUT_HOMEPAGE_FETCH_PATH,
+            output_path=(
+                args.output_dir / OUTPUT_CRAWL_AUDIT_PATH.name
+                if args.output_dir is not None
+                else OUTPUT_CRAWL_AUDIT_PATH
+            ),
+            resume=args.resume,
+            force=args.force,
+        )
+        return
+
+    if args.command == "select-values":
+        select_values_stage(
+            input_path=args.input or OUTPUT_CRAWL_AUDIT_PATH,
+            output_path=(
+                args.output_dir / OUTPUT_PRODUCTION_FINAL_PATH.name
+                if args.output_dir is not None
+                else OUTPUT_PRODUCTION_FINAL_PATH
+            ),
+        )
+        return
+
+    if args.command == "translate-values":
+        translate_values_stage(
+            input_path=args.input or OUTPUT_PRODUCTION_FINAL_PATH,
+            output_path=(
+                args.output_dir / OUTPUT_TRANSLATION_PATH.name
+                if args.output_dir is not None
+                else OUTPUT_TRANSLATION_PATH
+            ),
+            cache_path=(
+                args.output_dir / OUTPUT_TRANSLATION_CACHE_PATH.name
+                if args.output_dir is not None
+                else OUTPUT_TRANSLATION_CACHE_PATH
+            ),
+            force=args.force,
+        )
+        return
+
     if args.command == "run-all":
         run_all(
             input_path=args.input or None,
@@ -180,6 +266,7 @@ def main() -> None:
             force=args.force,
             workers=args.workers,
             seed=args.seed,
+            translate=args.translate,
         )
         return
 
