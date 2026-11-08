@@ -4,6 +4,15 @@ This repository contains the package-based migration of the company-values
 notebooks. The source pipeline now includes notebook 02's multilingual,
 relevance-guided crawler and translation workflow.
 
+## Technical highlights
+
+- A staged Python CLI moves notebook workflows into reusable source modules.
+- Multilingual sentence embeddings guide company-values section selection.
+- Domain qualification, availability checks, and robots policies constrain crawling.
+- Resume support, cached translations, and CSV audit outputs make long runs inspectable.
+
+See the [pipeline implementation](src/country_values_distance/pipeline.py), [CLI](src/country_values_distance/cli.py), and [unit tests](tests/unit/). Translation requires a separately running local model; model weights and source input data are not bundled by the package installer.
+
 ## Installation
 
 ```bash
@@ -57,3 +66,4 @@ Important notebook 02 artifacts are:
 The crawler checks every path against `robots.txt`, stays on the company
 domain, removes tracking queries and fragments, filters excluded paths and
 file types, and enforces depth, page, branch, and request-concurrency limits.
+
